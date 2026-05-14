@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retro Board — Sticky Notes</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", -apple-system, sans-serif;
+      background: #f0ece4;
+      background-image:
+        radial-gradient(circle at 25px 25px, #e8e4dc 2px, transparent 0),
+        radial-gradient(circle at 75px 75px, #e8e4dc 2px, transparent 0);
+      background-size: 100px 100px;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #2b2b2b;
+      padding: 18px 32px;
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.2px;
+    }
+
+    header span { font-size: 13px; color: #888; }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      padding: 30px 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .column { display: flex; flex-direction: column; gap: 14px; }
+
+    .column-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    .col-well   .column-header { background: #5aad6e; color: #fff; }
+    .col-bad    .column-header { background: #d95f5f; color: #fff; }
+    .col-action .column-header { background: #4a8fd4; color: #fff; }
+
+    .column-count {
+      margin-left: auto;
+      background: rgba(255,255,255,0.25);
+      padding: 1px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    .cards { display: flex; flex-direction: column; gap: 10px; }
+
+    /* Sticky note look */
+    .card {
+      padding: 14px 14px 18px;
+      border-radius: 2px;
+      box-shadow: 2px 3px 10px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.08);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      position: relative;
+      transition: transform 0.15s, box-shadow 0.15s;
+      transform: rotate(var(--tilt, 0deg));
+    }
+
+    .card:hover {
+      transform: rotate(0deg) scale(1.02);
+      box-shadow: 3px 6px 18px rgba(0,0,0,0.2);
+      z-index: 2;
+    }
+
+    .col-well   .card { background: #fffde7; --tilt: -0.4deg; }
+    .col-bad    .card { background: #fce4ec; --tilt: 0.5deg; }
+    .col-action .card { background: #e3f2fd; --tilt: -0.3deg; }
+
+    /* Tape strip at top */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 36px;
+      height: 14px;
+      border-radius: 2px;
+      opacity: 0.55;
+    }
+
+    .col-well   .card::before { background: #c8e6c9; }
+    .col-bad    .card::before { background: #ffcdd2; }
+    .col-action .card::before { background: #bbdefb; }
+
+    .card-text {
+      flex: 1;
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: #333;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    .upvote {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .upvote-btn {
+      background: rgba(0,0,0,0.06);
+      border: none;
+      border-radius: 5px;
+      width: 28px;
+      height: 24px;
+      cursor: pointer;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #777;
+      transition: all 0.12s;
+    }
+
+    .upvote-btn:hover { background: rgba(0,0,0,0.12); color: #333; }
+
+    .col-well   .upvote-btn.voted { background: #a5d6a7; color: #2e7d32; }
+    .col-bad    .upvote-btn.voted { background: #ef9a9a; color: #b71c1c; }
+    .col-action .upvote-btn.voted { background: #90caf9; color: #0d47a1; }
+
+    .vote-count { font-size: 12px; font-weight: 700; color: #555; min-width: 20px; text-align: center; }
+
+    .add-area {
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .add-input-row { display: flex; gap: 8px; align-items: flex-end; }
+
+    .add-input {
+      flex: 1;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: none;
+      line-height: 1.4;
+      min-height: 36px;
+      max-height: 100px;
+      outline: none;
+      background: #fafafa;
+      color: #333;
+    }
+
+    .add-input::placeholder { color: #bbb; }
+    .add-input:focus { border-color: #aaa; background: #fff; }
+
+    .add-btn {
+      flex-shrink: 0;
+      height: 36px;
+      padding: 0 14px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      color: #fff;
+      transition: opacity 0.12s;
+    }
+    .add-btn:hover { opacity: 0.85; }
+
+    .col-well   .add-btn { background: #5aad6e; }
+    .col-bad    .add-btn { background: #d95f5f; }
+    .col-action .add-btn { background: #4a8fd4; }
+
+    .empty-state { text-align: center; padding: 12px; font-size: 12px; color: #aaa; background: rgba(255,255,255,0.5); border-radius: 6px; }
+
+    @media (max-width: 780px) {
+      .board { grid-template-columns: 1fr; padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Team Retrospective</h1>
+  <span id="date-label"></span>
+</header>
+
+<div class="board">
+  <div class="column col-well">
+    <div class="column-header">
+      ✦ What went well
+      <span class="column-count" id="count-well">0</span>
+    </div>
+    <div class="cards" id="cards-well"></div>
+    <div class="add-area">
+      <div class="add-input-row">
+        <textarea class="add-input" id="input-well" placeholder="Add a card…" rows="1"></textarea>
+        <button class="add-btn" onclick="addCard('well')">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="column col-bad">
+    <div class="column-header">
+      ✦ What didn't go well
+      <span class="column-count" id="count-bad">0</span>
+    </div>
+    <div class="cards" id="cards-bad"></div>
+    <div class="add-area">
+      <div class="add-input-row">
+        <textarea class="add-input" id="input-bad" placeholder="Add a card…" rows="1"></textarea>
+        <button class="add-btn" onclick="addCard('bad')">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="column col-action">
+    <div class="column-header">
+      ✦ Action items
+      <span class="column-count" id="count-action">0</span>
+    </div>
+    <div class="cards" id="cards-action"></div>
+    <div class="add-area">
+      <div class="add-input-row">
+        <textarea class="add-input" id="input-action" placeholder="Add a card…" rows="1"></textarea>
+        <button class="add-btn" onclick="addCard('action')">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('date-label').textContent = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  const data = {
+    well: [
+      { id: 1, text: "Shipped the new dashboard on time — great cross-team coordination.", votes: 5, voted: false },
+      { id: 2, text: "Daily standups were focused and stayed under 15 minutes.", votes: 3, voted: false },
+      { id: 3, text: "Good test coverage on the new auth module caught bugs early.", votes: 2, voted: false },
+    ],
+    bad: [
+      { id: 4, text: "Requirements changed mid-sprint, causing a lot of rework.", votes: 7, voted: false },
+      { id: 5, text: "Handoff between design and engineering was unclear and delayed.", votes: 4, voted: false },
+      { id: 6, text: "On-call load was unevenly distributed this cycle.", votes: 2, voted: false },
+    ],
+    action: [
+      { id: 7, text: "Create a shared requirements doc template before each sprint starts.", votes: 6, voted: false },
+      { id: 8, text: "Set up a weekly design–engineering sync to align on specs earlier.", votes: 4, voted: false },
+      { id: 9, text: "Rotate on-call schedule and document rotation policy.", votes: 3, voted: false },
+    ],
+  };
+
+  let nextId = 10;
+
+  function render(col) {
+    const container = document.getElementById(`cards-${col}`);
+    const sorted = [...data[col]].sort((a, b) => b.votes - a.votes);
+    container.innerHTML = sorted.length === 0
+      ? `<div class="empty-state">No cards yet.</div>`
+      : sorted.map(c => `
+        <div class="card">
+          <div class="upvote">
+            <button class="upvote-btn ${c.voted ? 'voted' : ''}" onclick="vote('${col}',${c.id})">▲</button>
+            <span class="vote-count">${c.votes}</span>
+          </div>
+          <div class="card-text">${escHtml(c.text)}</div>
+        </div>`).join('');
+    document.getElementById(`count-${col}`).textContent = data[col].length;
+  }
+
+  function vote(col, id) {
+    const c = data[col].find(x => x.id === id);
+    if (!c) return;
+    c.voted ? (c.votes = Math.max(0, c.votes - 1), c.voted = false) : (c.votes++, c.voted = true);
+    render(col);
+  }
+
+  function addCard(col) {
+    const input = document.getElementById(`input-${col}`);
+    const text = input.value.trim();
+    if (!text) return;
+    data[col].push({ id: nextId++, text, votes: 0, voted: false });
+    input.value = '';
+    input.style.height = 'auto';
+    render(col);
+  }
+
+  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  document.querySelectorAll('.add-input').forEach(el => {
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addCard(el.id.replace('input-','')); }
+    });
+    el.addEventListener('input', () => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; });
+  });
+
+  ['well','bad','action'].forEach(render);
+</script>
+</body>
+</html>
